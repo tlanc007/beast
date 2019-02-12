@@ -32,16 +32,23 @@ main(int argc, char* argv[])
             "    websocket-chat-server 0.0.0.0 8080 .\n";
         return EXIT_FAILURE;
     }
-    auto address = net::ip::make_address(argv[1]);
-    auto port = static_cast<unsigned short>(std::atoi(argv[2]));
-    auto doc_root = argv[3];
+    const auto address = net::ip::make_address(argv[1]);
+    const auto port = static_cast<unsigned short>(std::atoi(argv[2]));
+    const auto doc_root = argv[3];
 
     // The io_context is required for all I/O
     net::io_context ioc;
 
+    // SSL context is required and holds certificates
+    ssl::context ctx {ssl::context::sslv23};
+    
+    // holds self-signed certificate used by the server
+    load_server_certificate(ctx);
+    
     // Create and launch a listening port
     std::make_shared<listener>(
         ioc,
+        ctx,
         tcp::endpoint{address, port},
         std::make_shared<shared_state>(doc_root))->run();
 

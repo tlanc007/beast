@@ -21,6 +21,7 @@ class shared_state;
 // Accepts incoming connections and launches the sessions
 class listener : public std::enable_shared_from_this<listener>
 {
+    ssl::context& _ctx;
     tcp::acceptor acceptor_;
     tcp::socket socket_;
     std::shared_ptr<shared_state> state_;
@@ -31,6 +32,7 @@ class listener : public std::enable_shared_from_this<listener>
 public:
     listener(
         net::io_context& ioc,
+        ssl::context& ctx_,
         tcp::endpoint endpoint,
         std::shared_ptr<shared_state> const& state);
 

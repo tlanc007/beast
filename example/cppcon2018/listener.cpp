@@ -14,9 +14,11 @@
 listener::
 listener(
     net::io_context& ioc,
+    ssl::context& ctx_,
     tcp::endpoint endpoint,
     std::shared_ptr<shared_state> const& state)
-    : acceptor_(ioc)
+    : _ctx {ctx_}
+    , acceptor_(ioc)
     , socket_(ioc)
     , state_(state)
 {
@@ -91,6 +93,7 @@ on_accept(beast::error_code ec)
         // Launch a new session for this connection
         std::make_shared<http_session>(
             std::move(socket_),
+            _ctx,
             state_)->run();
 
     // Accept another connection

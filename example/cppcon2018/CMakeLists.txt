@@ -14,7 +14,7 @@ file (GLOB APP_FILES
   beast.hpp
   http_session.cpp
   http_session.hpp
-  Jamfile
+  #Jamfile
   listener.cpp
   listener.hpp
   main.cpp
@@ -24,7 +24,7 @@ file (GLOB APP_FILES
   websocket_session.cpp
   websocket_session.hpp
   chat_client.html
-  README.md
+  #README.md
 )
 
 source_group ("" FILES ${APP_FILES})
@@ -33,5 +33,8 @@ add_executable (websocket-chat-server
     ${APP_FILES}
     ${BOOST_BEAST_FILES}
 )
+
+target_link_libraries (websocket-chat-server
+    crypto ssl)
 
 set_property(TARGET websocket-chat-server PROPERTY FOLDER "example-cppcon2018")

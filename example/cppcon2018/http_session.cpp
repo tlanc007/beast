@@ -190,9 +190,10 @@ handle_request(
 
 http_session::
 http_session(
-    tcp::socket socket,
+    tcp::socket&& socket,
+    ssl::context& ctx_,
     std::shared_ptr<shared_state> const& state)
-    : socket_(std::move(socket))
+: _stream {std::move(socket), ctx_ }
     , state_(state)
 {
 }
@@ -201,13 +202,41 @@ void
 http_session::
 run()
 {
+    beast::get_lowest_layer(_stream).expires_after(std::chrono::seconds (30) );
+    
+    // Perform SSL handshake
+    _stream.async_handshake(ssl::stream_base::server,
+                            std::bind (
+                                       &http_session::on_handshake,
+                                       shared_from_this(),
+                                       std::placeholders::_1) );
+}
+
+void http_session::on_handshake (beast::error_code ec)
+{
+    if (ec) {
+        return fail (ec, "handshake");
+    }
+    
+    do_read ();
+}
+
+void http_session::do_read ()
+{
+    // Make the request empty before reading.
+    // otherwise the operation behavior is undefined.
+    req_ = {};
+    
+    // Set the timeout
+    beast::get_lowest_layer(_stream).expires_after (std::chrono::seconds (30) );
+    
     // Read a request
-    http::async_read(socket_, buffer_, req_,
-        std::bind(
-            &http_session::on_read,
-            shared_from_this(),
-            std::placeholders::_1,
-            std::placeholders::_2));
+    http::async_read(_stream, buffer_, req_,
+                     std::bind(
+                               &http_session::on_read,
+                               shared_from_this(),
+                               std::placeholders::_1,
+                               std::placeholders::_2));
 }
 
 // Report a failure
@@ -237,12 +266,30 @@ operator()(http::message<isRequest, Body, Fields>&& msg) const
     // Write the response
     auto self = self_.shared_from_this();
     http::async_write(
-        self_.socket_,
+        self_._stream,
         *sp,
         [self, sp](beast::error_code ec, std::size_t bytes)
         {
             self->on_write(ec, bytes, sp->need_eof());
         });
+}
+
+void http_session::do_close()
+{
+    beast::get_lowest_layer(_stream).expires_after(std::chrono::seconds (30) );
+    
+    // Perform SSL shutdown
+    _stream.async_shutdown(std::bind (
+                                      &http_session::on_shutdown,
+                                      shared_from_this(),
+                                      std::placeholders::_1) );
+}
+
+void http_session::on_shutdown (beast::error_code ec)
+{
+    if (ec) {
+        return fail(ec, "shutdown");
+    }
 }
 
 void
@@ -252,8 +299,7 @@ on_read(beast::error_code ec, std::size_t)
     // This means they closed the connection
     if(ec == http::error::end_of_stream)
     {
-        socket_.shutdown(tcp::socket::shutdown_send, ec);
-        return;
+        return do_close ();
     }
 
     // Handle the error, if any
@@ -264,8 +310,10 @@ on_read(beast::error_code ec, std::size_t)
     if(websocket::is_upgrade(req_))
     {
         // Create a WebSocket session by transferring the socket
+#if 0
         std::make_shared<websocket_session>(
             std::move(socket_), state_)->run(std::move(req_));
+#endif
         return;
     }
 
@@ -331,8 +379,7 @@ on_write(beast::error_code ec, std::size_t, bool close)
     {
         // This means we should close the connection, usually because
         // the response indicated the "Connection: close" semantic.
-        socket_.shutdown(tcp::socket::shutdown_send, ec);
-        return;
+        return do_close();
     }
 
     // Clear contents of the request message,
@@ -340,7 +387,7 @@ on_write(beast::error_code ec, std::size_t, bool close)
     req_ = {};
 
     // Read another request
-    http::async_read(socket_, buffer_, req_,
+    http::async_read(_stream, buffer_, req_,
         std::bind(
             &http_session::on_read,
             shared_from_this(),

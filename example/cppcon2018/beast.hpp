@@ -10,10 +10,15 @@
 #ifndef CPPCON2018_BEAST_HPP
 #define CPPCON2018_BEAST_HPP
 
+#include "example/common/server_certificate.hpp"
+
+#include <boost/beast/_experimental/core/ssl_stream.hpp>
 #include <boost/beast.hpp>
 
 namespace beast = boost::beast;                 // from <boost/beast.hpp>
 namespace http = beast::http;                   // from <boost/beast/http.hpp>
 namespace websocket = beast::websocket;         // from <boost/beast/websocket.hpp>
+namespace net = boost::asio;
+namespace ssl = boost::asio::ssl;
 
 #endif
