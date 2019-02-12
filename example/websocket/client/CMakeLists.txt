@@ -8,11 +8,11 @@
 #
 
 add_subdirectory (async)
-add_subdirectory (coro)
+#add_subdirectory (coro)
 add_subdirectory (sync)
 
 if (OPENSSL_FOUND)
     add_subdirectory (async-ssl)
-    add_subdirectory (coro-ssl)
+    #add_subdirectory (coro-ssl)
     add_subdirectory (sync-ssl)
 endif()

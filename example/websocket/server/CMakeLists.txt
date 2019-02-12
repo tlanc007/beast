@@ -9,14 +9,14 @@
 
 add_subdirectory (async)
 add_subdirectory (chat-multi)
-add_subdirectory (coro)
-add_subdirectory (fast)
+#add_subdirectory (coro)
+#add_subdirectory (fast)
 add_subdirectory (stackless)
 add_subdirectory (sync)
 
 if (OPENSSL_FOUND)
     add_subdirectory (async-ssl)
-    add_subdirectory (coro-ssl)
+    #add_subdirectory (coro-ssl)
     add_subdirectory (stackless-ssl)
     add_subdirectory (sync-ssl)
 endif()
