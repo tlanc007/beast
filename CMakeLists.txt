@@ -41,7 +41,7 @@ project (Beast VERSION 252)
 
 set_property (GLOBAL PROPERTY USE_FOLDERS ON)
 option (Beast_BUILD_EXAMPLES "Build examples" ON)
-option (Beast_BUILD_TESTS "Build tests" ON)
+option (Beast_BUILD_TESTS "Build tests" OFF)
 
 if (MSVC)
     set (CMAKE_VERBOSE_MAKEFILE FALSE)
@@ -85,7 +85,7 @@ else()
     find_package (Threads)
 
     set( CMAKE_CXX_FLAGS
-      "${CMAKE_CXX_FLAGS} -std=c++11 -Wall -Wextra -Wpedantic -Wno-unused-parameter")
+      "${CMAKE_CXX_FLAGS} -std=c++17 -Wall -Wextra -Wpedantic -Wno-unused-parameter")
 
     if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wrange-loop-analysis")
@@ -119,7 +119,9 @@ find_package(OpenSSL)
 #
 #-------------------------------------------------------------------------------
 
-get_filename_component (BOOST_ROOT ../../ ABSOLUTE)
+#get_filename_component (BOOST_ROOT ../../ ABSOLUTE)
+#get_filename_component (BOOST_ROOT /Users/tal/Downloads/boost_1_69_0 ABSOLUTE)
+get_filename_component (BOOST_ROOT /usr/local/boost_1_69_0 ABSOLUTE)
 
 # VFALCO I want static but "b2 stage" builds a minimal set which excludes static
 add_definitions (-DBOOST_ALL_STATIC_LINK=1)
@@ -131,9 +133,9 @@ add_definitions (-DBOOST_ASIO_DISABLE_BOOST_DATE_TIME=1)
 add_definitions (-DBOOST_ASIO_DISABLE_BOOST_REGEX=1)
 add_definitions (-DBOOST_COROUTINES_NO_DEPRECATION_WARNING=1)
 
-include_directories (${BOOST_ROOT})
+include_directories (${BOOST_ROOT}/include)
 
-link_directories(${BOOST_ROOT}/stage/lib)
+link_directories(${BOOST_ROOT}/lib)
 
 if (MINGW)
     link_libraries(ws2_32 mswsock)
