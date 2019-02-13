@@ -313,6 +313,9 @@ on_read(beast::error_code ec, std::size_t)
 #if 0
         std::make_shared<websocket_session>(
             std::move(socket_), state_)->run(std::move(req_));
+#else
+        // see advanced_server_flex.cpp make_socket_session
+        std::make_shared<websocket_session>(std::move (_stream), state_ )->run (std::move (req_) );
 #endif
         return;
     }

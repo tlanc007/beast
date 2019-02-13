@@ -27,7 +27,8 @@ class shared_state;
 class websocket_session : public std::enable_shared_from_this<websocket_session>
 {
     beast::flat_buffer buffer_;
-    websocket::stream<tcp::socket> ws_;
+    websocket::stream<beast::ssl_stream <
+        beast::tcp_stream <net::io_context::strand> > > _wss;
     std::shared_ptr<shared_state> state_;
     std::vector<std::shared_ptr<std::string const>> queue_;
 
@@ -37,8 +38,8 @@ class websocket_session : public std::enable_shared_from_this<websocket_session>
     void on_write(beast::error_code ec, std::size_t bytes_transferred);
 
 public:
-    websocket_session(
-        tcp::socket socket,
+    explicit websocket_session(
+        beast::ssl_stream<beast::tcp_stream<net::io_context::strand> >&& stream,
         std::shared_ptr<shared_state> const& state);
 
     ~websocket_session();
@@ -58,7 +59,7 @@ websocket_session::
 run(http::request<Body, http::basic_fields<Allocator>> req)
 {
     // Accept the websocket handshake
-    ws_.async_accept(
+    _wss.async_accept(
         req,
         std::bind(
             &websocket_session::on_accept,

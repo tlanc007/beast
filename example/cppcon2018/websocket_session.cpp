@@ -12,9 +12,9 @@
 
 websocket_session::
 websocket_session(
-    tcp::socket socket,
+    beast::ssl_stream<beast::tcp_stream<net::io_context::strand> >&& stream_,
     std::shared_ptr<shared_state> const& state)
-    : ws_(std::move(socket))
+    : _wss {std::move(stream_) }
     , state_(state)
 {
 }
@@ -50,7 +50,7 @@ on_accept(beast::error_code ec)
     state_->join(*this);
 
     // Read a message
-    ws_.async_read(
+    _wss.async_read(
         buffer_,
         std::bind(
             &websocket_session::on_read,
@@ -74,7 +74,7 @@ on_read(beast::error_code ec, std::size_t)
     buffer_.consume(buffer_.size());
 
     // Read another message
-    ws_.async_read(
+    _wss.async_read(
         buffer_,
         std::bind(
             &websocket_session::on_read,
@@ -95,7 +95,7 @@ send(std::shared_ptr<std::string const> const& ss)
         return;
 
     // We are not currently writing, so send this immediately
-    ws_.async_write(
+    _wss.async_write(
         net::buffer(*queue_.front()),
         std::bind(
             &websocket_session::on_write,
@@ -117,7 +117,7 @@ on_write(beast::error_code ec, std::size_t)
 
     // Send the next message if any
     if(! queue_.empty())
-        ws_.async_write(
+        _wss.async_write(
             net::buffer(*queue_.front()),
             std::bind(
                 &websocket_session::on_write,
