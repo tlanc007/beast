@@ -258,6 +258,9 @@ public:
     void
     do_accept(http::request<Body, http::basic_fields<Allocator>> req)
     {
+        
+        std::cout << "req target " << req.target();
+        
         // Set the control callback. This will be called
         // on every incoming ping, pong, and close frame.
         derived().ws().control_callback(
@@ -492,6 +495,7 @@ public:
         on_timer({});
 
         // Accept the WebSocket upgrade request
+
         do_accept(std::move(req));
     }
 
@@ -1065,6 +1069,7 @@ public:
         if(ec)
             return fail(ec, "detect");
 
+        // force https only if(result)
         if(result)
         {
             // Launch SSL session
