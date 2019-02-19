@@ -215,7 +215,7 @@ run()
 void http_session::on_handshake (beast::error_code ec)
 {
     if (ec) {
-        return fail (ec, "handshake");
+        return fail (ec, "http_session:on_handshake");
     }
     
     do_read ();
@@ -304,7 +304,7 @@ on_read(beast::error_code ec, std::size_t)
 
     // Handle the error, if any
     if(ec)
-        return fail(ec, "read");
+        return fail(ec, "http_session::on_read");
 
     // See if it is a WebSocket Upgrade
     if(websocket::is_upgrade(req_))
