@@ -25,6 +25,10 @@ constexpr auto portStr {"8080"};
 constexpr auto port {static_cast<unsigned int> (8080) };
 constexpr auto docRootSrc {"/Users/tal/Desktop/other/rmr/public_html"};
 constexpr auto target {"/simple.html"};
+const std::string simpleHtmlBody {R"""(<html>
+<body>B</body>
+</html>
+)"""};
 constexpr auto localhost {"127.0.0.1"};
 constexpr auto threads {1};
 const auto address {net::ip::make_address(localhost) };
@@ -38,6 +42,8 @@ void fail(beast::error_code ec, char const* what)
 
 // may need to be changed
 using streamType = beast::tcp_stream<net::io_context::executor_type>;
+
+http::response<http::string_body> gres;
 
 class Client : public std::enable_shared_from_this<Client>
 {
@@ -65,6 +71,7 @@ public:
     void onResolve (beast::error_code ec_,
                     tcp::resolver::results_type results_)
     {
+        REQUIRE(!ec_);
         if (ec_) {
             return fail (ec_, "resolve");
         }
@@ -80,6 +87,7 @@ public:
     
     void onConnect (beast::error_code ec_, tcp::resolver::results_type::endpoint_type)
     {
+        REQUIRE(!ec_);
         if (ec_) {
             return fail (ec_, "connect");
         }
@@ -97,13 +105,13 @@ public:
                  std::size_t bytesTransferred_)
     {
         boost::ignore_unused(bytesTransferred_);
-        
+        REQUIRE(!ec_);
         if (ec_) {
             return fail (ec_, "write");
         }
         
         // Receive HTTP response
-        http::async_read(_stream, _buffer, _res,
+        http::async_read(_stream, _buffer, gres,
                          beast::bind_front_handler(&Client::onRead,
                                                    shared_from_this() ) );
     }
@@ -117,7 +125,7 @@ public:
             return fail (ec_, "Client read");
         }
         
-        std::cout << _res << "\n";
+        //std::cout << "Client onRead: " << gres << "\n";
         
         // gracefully close the socket
         _stream.socket().shutdown(tcp::socket::shutdown_both, ec_);
@@ -135,7 +143,6 @@ private:
     streamType _stream;
     beast::flat_buffer _buffer;
     http::request<http::empty_body> _req;
-    http::response<http::string_body> _res;
 };
 
 TEST_CASE("Simple server")
@@ -151,10 +158,24 @@ TEST_CASE("Simple server")
         
         // Run the I/O service on the requested number of threads
         // forcing to 1 thread (at lest for now ...
+        SECTION("valid target: /simple.html")
+        {
+            std::make_shared<Client>(ioc)->run (localhost, portStr, target, 11/* version*/);
+            ioc.run();
+            std::cout << gres << "\n";
+            REQUIRE(gres.result() == http::status::ok);
+            REQUIRE(gres.body() == simpleHtmlBody);
+        }
         
-        std::make_shared<Client>(ioc)->run (localhost, portStr, target, 11/* version*/);
-        ioc.run();
-        
+        SECTION("invalid target: no root simple.html")
+        {
+            gres = {};
+            std::make_shared<Client>(ioc)->run (localhost, portStr, "simple.html", 11/* version*/);
+            ioc.run();
+            std::cout << gres << "\n";
+            REQUIRE(gres.result() == http::status::bad_request);
+            REQUIRE(gres.body() == "Illegal request-target");
+        }
     }
 }
     
