@@ -32,6 +32,7 @@ if (OPENSSL_FOUND)
         ${PROJECT_SOURCE_DIR}/example/common/server_certificate.hpp
         #Jamfile
         #advanced_server_flex.cpp
+        beast.hpp
         handleRequest.hpp
         httpSession.hpp
         #httpSession.cpp
@@ -45,6 +46,30 @@ if (OPENSSL_FOUND)
     set_property(TARGET advanced-server-flex-cpp17 PROPERTY FOLDER "example-advanced-server")
     
     target_link_libraries (advanced-server-flex-cpp17
+        OpenSSL::SSL OpenSSL::Crypto
+        )
+
+    add_executable (test-advanced-server-flex-cpp17
+        ${BOOST_BEAST_FILES}
+        ${PROJECT_SOURCE_DIR}/example/common/detect_ssl.hpp
+        ${PROJECT_SOURCE_DIR}/example/common/server_certificate.hpp
+        #Jamfile
+        #advanced_server_flex.cpp
+        beast.hpp
+        handleRequest.hpp
+        httpSession.hpp
+        #httpSession.cpp
+        websocketSession.hpp
+        #websocketSession.cpp
+        detectSession.hpp
+        listener.hpp
+        test1.cpp
+        test_main.cpp
+    )
+
+    set_property(TARGET test-advanced-server-flex-cpp17 PROPERTY FOLDER "example-advanced-server")
+    
+    target_link_libraries (test-advanced-server-flex-cpp17
         OpenSSL::SSL OpenSSL::Crypto
         )
 
