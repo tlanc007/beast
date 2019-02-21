@@ -24,7 +24,7 @@ using tcp = net::ip::tcp;               // from <boost/asio/ip/tcp.hpp>
 constexpr auto portStr {"8080"};
 constexpr auto port {static_cast<unsigned int> (8080) };
 constexpr auto docRootSrc {"/Users/tal/Desktop/other/rmr/public_html"};
-constexpr auto target {"simple.html"};
+constexpr auto target {"/simple.html"};
 constexpr auto localhost {"127.0.0.1"};
 constexpr auto threads {1};
 const auto address {net::ip::make_address(localhost) };
@@ -114,7 +114,7 @@ public:
         boost::ignore_unused(bytesTransferred_);
         
         if (ec_) {
-            return fail (ec_, "read");
+            return fail (ec_, "Client read");
         }
         
         std::cout << _res << "\n";

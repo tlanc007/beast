@@ -1,5 +1,6 @@
 
 #include "beast.hpp"
+#include "httpSession.hpp"
 
 // Accepts incoming connections and launches the sessions
 class listener : public std::enable_shared_from_this<listener>
@@ -33,7 +34,7 @@ public:
         _acceptor.bind(endpoint_, ec);
         if(ec)
         {
-            fail(ec, "bind");
+            fail(ec, "listener bind");
             return;
         }
         
@@ -68,15 +69,17 @@ public:
     void onAccept (beast::error_code ec_, tcp::socket socket_)
     {
         if (ec_) {
-            fail (ec_, "accept");
+            fail (ec_, "listener accept");
         }
         
         else {
             // Create the detector http_session and run it
+            std::make_shared<HttpSession>(std::move(socket_),
+                                          _docRoot)->run();
         }
         
         // Accept another connection
-        
+        //doAccept();
     }
     
 private:
