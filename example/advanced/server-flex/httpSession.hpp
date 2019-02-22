@@ -6,9 +6,11 @@
 class HttpSession : public std::enable_shared_from_this <HttpSession>
 {
 public:
-    HttpSession (tcp::socket&& socket_,
+    HttpSession (beast::tcp_stream<net::io_context::strand>&& stream_,
+                 beast::flat_buffer&& buffer_,
                  const std::shared_ptr <const std::string>& docRoot_)
-    : _stream {std::move (socket_) }
+    : _stream {std::move (stream_) }
+    , _buffer {std::move (buffer_) }
     , _docRoot {docRoot_}
     { }
     

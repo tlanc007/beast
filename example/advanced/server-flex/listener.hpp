@@ -1,6 +1,7 @@
 
 #include "beast.hpp"
-#include "httpSession.hpp"
+//#include "httpSession.hpp"
+#include "detectSession.hpp"
 
 // Accepts incoming connections and launches the sessions
 class listener : public std::enable_shared_from_this<listener>
@@ -74,7 +75,7 @@ public:
         
         else {
             // Create the detector http_session and run it
-            std::make_shared<HttpSession>(std::move(socket_),
+            std::make_shared<DetectSession>(std::move(socket_),
                                           _docRoot)->run();
         }
         

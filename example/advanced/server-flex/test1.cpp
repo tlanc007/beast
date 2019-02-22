@@ -163,8 +163,16 @@ TEST_CASE("Simple server")
             std::make_shared<Client>(ioc)->run (localhost, portStr, target, 11/* version*/);
             ioc.run();
             std::cout << gres << "\n";
+            REQUIRE(gres.version() == 11);
             REQUIRE(gres.result() == http::status::ok);
             REQUIRE(gres.body() == simpleHtmlBody);
+            //auto header {gres.base() };
+            //std::cout << "h0 " << header[0] << "\n";
+            auto hdr {gres.base()};
+            for (const auto& e: gres) {
+                std::cout << "cbegin: name- " << e.name_string() << " val- " << e.value() << "\n";
+            }
+            std::cout << "\n";
         }
         
         SECTION("invalid target: no root simple.html")
