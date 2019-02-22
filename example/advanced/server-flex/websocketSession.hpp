@@ -4,10 +4,27 @@
 class WebSocketSession: public std::enable_shared_from_this <WebSocketSession>
 {
 public:
-    WebSocketSession(beast::tcp_stream<net::io_context::strand>&& strand_)
+    explicit WebSocketSession(beast::tcp_stream<net::io_context::strand>&& strand_)
     : _ws {std::move (strand_) }
     { }
     
+    // Start asynchronous operation
+    template <class Body, class Allocator>
+    void doAccept (http::request <Body, http::basic_fields <Allocator> > req_)
+    {
+        // Set the control callback.  This will be called
+        // on every incoming ping, pong and close frame.
+        _ws.control_callback ([this](websocket::frame_type kind,
+                                     beast::string_view payload) {
+            this->shared_from_this();
+        } );
+        
+        // Accept the websocket handshake
+        _ws.async_accept (req_,
+                          beast::bind_front_handler (&WebSocketSession::onAccept,
+                                                     shared_from_this () ) );
+    }
+
     // Start asynchronous operation
     template <class Body, class Allocator>
     void run (http::request <Body, http::basic_fields <Allocator> > req_)
@@ -26,11 +43,17 @@ public:
         }
         
         if (ec_) {
-            return fail (ec, "accept");
+            return fail (ec_, "WebSocketSession accept");
         }
         
         // read message
         doRead();
+    }
+    
+    // indicate activity from the remote peer
+    void activity ()
+    {
+        // ping state, timer expires after
     }
     
     void doRead ()
@@ -71,7 +94,7 @@ public:
     void onWrite (beast::error_code ec_,
                   std::size_t bytesTransferred)
     {
-        boost::ignore_unused(bytes_transferred);
+        boost::ignore_unused(bytesTransferred);
         
         // Happens when timer closes the socket
         if (ec_ == net::error::operation_aborted) {
@@ -80,7 +103,7 @@ public:
         
         // This indicates that the websocket was closed
         if (ec_) {
-            return fail (ec, "write");
+            return fail (ec_, "write");
         }
         
         // clear buffer
@@ -91,7 +114,15 @@ public:
     }
 
 private:
-    explicit websocket::stream<beast::tcp_stream<net::io_context::strand> > _ws;
+    websocket::stream<beast::tcp_stream<net::io_context::strand> > _ws;
+    beast::flat_buffer _buffer;
     bool _close {false};
+};
+
+template <class Body, class Allocator>
+void makeWebSocketSession (beast::tcp_stream <net::io_context::strand> stream_,
+                           http::request <Body, http::basic_fields <Allocator> > req_)
+{
+    std::make_shared <WebSocketSession> (std::move (stream_) )->run (std::move (req_) );
 }
 

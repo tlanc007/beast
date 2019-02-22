@@ -2,6 +2,8 @@
 // simple version for now
 #include "beast.hpp"
 #include "handleRequest.hpp"
+#include "websocketSession.hpp"
+
 
 class HttpSession : public std::enable_shared_from_this <HttpSession>
 {
@@ -13,6 +15,11 @@ public:
     , _buffer {std::move (buffer_) }
     , _docRoot {docRoot_}
     { }
+    
+    beast::tcp_stream<net::io_context::strand> releaseStream()
+    {
+        return std::move (_stream);
+    }
     
     void run()
     {
@@ -41,6 +48,13 @@ public:
         
         if (ec_) {
             return fail (ec_, "HttpSession read");
+        }
+        
+        // see if WebSocket upgrade
+        if (websocket::is_upgrade (_req) ) {
+            // Transfer stream to new WebSocket session
+            return makeWebSocketSession (releaseStream(),
+                                         std::move (_req) );
         }
         
         // Send the response
