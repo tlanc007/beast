@@ -45,6 +45,125 @@ using streamType = beast::tcp_stream<net::io_context::executor_type>;
 
 http::response<http::string_body> gres;
 
+class WSClient : public std::enable_shared_from_this<WSClient>
+{
+public:
+    explicit WSClient (net::io_context& ioc_)
+    : _resolver (ioc_)
+    , _ws (ioc_)
+    { }
+        
+    void run (const char* host_,
+              const char* port_,
+              const char* text_)
+    {
+        _host = host_;
+        _text = text_;
+        
+        // look up domain
+        _resolver.async_resolve(host_, port_,
+                                beast::bind_front_handler(&WSClient::onResolve,
+                                                          shared_from_this() ) );
+    }
+    
+    void onResolve (beast::error_code ec_,
+                    tcp::resolver::results_type results_)
+    {
+        if (ec_) {
+            return fail (ec_, "WSClient resolve");
+        }
+        
+        // set timeout for the operation
+        beast::get_lowest_layer(_ws).expires_after (std::chrono::seconds (5) );
+        
+        // Make connection on the IP from lookup
+        beast::async_connect(beast::get_lowest_layer(_ws),
+                             results_,
+                             beast::bind_front_handler(&WSClient::onConnect,
+                                                       shared_from_this() ) );
+    }
+    
+    void onConnect (beast::error_code ec_, tcp::resolver::results_type::endpoint_type)
+    {
+        if (ec_) {
+            return fail (ec_, "WSClient connect");
+        }
+        
+        // perform ws handshake
+        _ws.async_handshake (_host, "/",
+                             beast::bind_front_handler(&WSClient::onHandshake,
+                                                       shared_from_this () ) );
+    }
+    
+    void onHandshake(beast::error_code ec_)
+    {
+        if(ec_) {
+            return fail(ec_, "WSClient handshake");
+        }
+        
+        // Send the message
+        _ws.async_write(
+                        net::buffer(_text),
+                        beast::bind_front_handler(
+                                                  &WSClient::onWrite,
+                                                  shared_from_this() ) );
+    }
+    
+    void onWrite(
+             beast::error_code ec_,
+             std::size_t bytesTransferred_)
+    {
+        boost::ignore_unused(bytesTransferred_);
+        
+        if(ec_) {
+            return fail(ec_, "WSCleint write");
+        }
+        
+        // Read a message into our buffer
+        _ws.async_read(
+                       _buffer,
+                       beast::bind_front_handler(
+                                                 &WSClient::onRead,
+                                                 shared_from_this() ) );
+    }
+
+    void onRead(
+            beast::error_code ec_,
+            std::size_t bytesTransferred_)
+    {
+        boost::ignore_unused(bytesTransferred_);
+        
+        if(ec_) {
+            return fail(ec_, "read");
+        }
+        
+        // Close the WebSocket connection
+        _ws.async_close(websocket::close_code::normal,
+                        beast::bind_front_handler(
+                                                  &WSClient::onClose,
+                                                  shared_from_this() ) );
+    }
+    
+    void onClose(beast::error_code ec_)
+    {
+        if(ec_) {
+            return fail(ec_, "WSClient close");
+        }
+        
+        // If we get here then the connection is closed gracefully
+        
+        // The make_printable() function helps print a ConstBufferSequence
+        std::cout << beast::make_printable(_buffer.data()) << "\n";
+    }
+
+private:
+    tcp::resolver _resolver;
+    websocket::stream<beast::tcp_stream<net::io_context::executor_type> > _ws;
+    beast::multi_buffer _buffer;
+    std::string _host;
+    std::string _text;
+};
+    
 class Client : public std::enable_shared_from_this<Client>
 {
     
@@ -183,6 +302,14 @@ TEST_CASE("Simple server")
             std::cout << gres << "\n";
             REQUIRE(gres.result() == http::status::bad_request);
             REQUIRE(gres.body() == "Illegal request-target");
+        }
+        
+        SECTION("websocket valid target: /")
+        {
+            std::make_shared<WSClient>(ioc)->run (localhost,
+                                                  portStr,
+                                                  "Howdy.");
+            ioc.run();
         }
     }
 }
