@@ -46,7 +46,7 @@ if (OPENSSL_FOUND)
     set_property(TARGET advanced-server-flex-cpp17 PROPERTY FOLDER "example-advanced-server")
     
     target_link_libraries (advanced-server-flex-cpp17
-        OpenSSL::SSL OpenSSL::Crypto
+        OpenSSL::SSL OpenSSL::Crypto fmt
         )
 
     add_executable (test-advanced-server-flex-cpp17
@@ -70,7 +70,7 @@ if (OPENSSL_FOUND)
     set_property(TARGET test-advanced-server-flex-cpp17 PROPERTY FOLDER "example-advanced-server")
     
     target_link_libraries (test-advanced-server-flex-cpp17
-        OpenSSL::SSL OpenSSL::Crypto
+        OpenSSL::SSL OpenSSL::Crypto fmt
         )
 
 endif()

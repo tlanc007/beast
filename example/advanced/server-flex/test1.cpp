@@ -12,6 +12,8 @@
 #include "beast.hpp"
 #include "listener.hpp"
 
+#include <fmt/printf.h>
+
 #include <catch2/catch.hpp>
 
 // setup namespaces
@@ -45,24 +47,6 @@ void fail(beast::error_code ec, char const* what)
 using streamType = beast::tcp_stream<net::io_context::executor_type>;
 
 http::response<http::string_body> gres;
-
-class RedirectStdOut {
-public:
-    explicit RedirectStdOut (std::streambuf* newBuffer)
-    : orig {std::cout.rdbuf (newBuffer) }
-    { }
-    
-    explicit RedirectStdOut (std::stringstream& stream)
-    : orig {std::cout.rdbuf (stream.rdbuf () ) }
-    { }
-    
-    ~RedirectStdOut () {
-        std::cout.rdbuf (orig);
-    }
-    
-private:
-    std::streambuf* orig;
-};
     
 class WSClient : public std::enable_shared_from_this<WSClient>
 {
@@ -172,15 +156,9 @@ public:
         // If we get here then the connection is closed gracefully
         
         // The make_printable() function helps print a ConstBufferSequence
-        std::cout << beast::make_printable(_buffer.data()) << "\n";
-        std::stringstream os {};
-        {
-            RedirectStdOut rdOut {os};
-            {
-                std::cout << beast::make_printable(_buffer.data());
-            }
-            REQUIRE (_text == os.str() );
-        }
+        fmt::print("buffer data: {}\n", beast::make_printable(_buffer.data() ) );
+        auto result {fmt::format("{}", beast::make_printable(_buffer.data() ) ) };
+        REQUIRE (_text == result );
     }
 
 private:
@@ -270,9 +248,7 @@ public:
         if (ec_) {
             return fail (ec_, "Client read");
         }
-        
-        //std::cout << "Client onRead: " << gres << "\n";
-        
+
         // gracefully close the socket
         _stream.socket().shutdown(tcp::socket::shutdown_both, ec_);
         
@@ -308,17 +284,16 @@ TEST_CASE("Simple server")
         {
             std::make_shared<Client>(ioc)->run (localhost, portStr, target, 11/* version*/);
             ioc.run();
-            std::cout << gres << "\n";
+            fmt::print("{}\n", gres);
             REQUIRE(gres.version() == 11);
             REQUIRE(gres.result() == http::status::ok);
             REQUIRE(gres.body() == simpleHtmlBody);
             //auto header {gres.base() };
-            //std::cout << "h0 " << header[0] << "\n";
             auto hdr {gres.base()};
             for (const auto& e: gres) {
-                std::cout << "cbegin: name- " << e.name_string() << " val- " << e.value() << "\n";
+                fmt::print("cbegin: name- {} val- {}\n", e.name_string(), e.value() );
             }
-            std::cout << "\n";
+            fmt::print("\n");
         }
         
         SECTION("invalid target: no root simple.html")
@@ -326,7 +301,7 @@ TEST_CASE("Simple server")
             gres = {};
             std::make_shared<Client>(ioc)->run (localhost, portStr, "simple.html", 11/* version*/);
             ioc.run();
-            std::cout << gres << "\n";
+            fmt::print("{}\n", gres);
             REQUIRE(gres.result() == http::status::bad_request);
             REQUIRE(gres.body() == "Illegal request-target");
         }
