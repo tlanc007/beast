@@ -4,6 +4,7 @@
 #include <functional>
 #include <iostream>
 #include <memory>
+#include <sstream>
 #include <string>
 #include <thread>
 #include <vector>
@@ -45,6 +46,24 @@ using streamType = beast::tcp_stream<net::io_context::executor_type>;
 
 http::response<http::string_body> gres;
 
+class RedirectStdOut {
+public:
+    explicit RedirectStdOut (std::streambuf* newBuffer)
+    : orig {std::cout.rdbuf (newBuffer) }
+    { }
+    
+    explicit RedirectStdOut (std::stringstream& stream)
+    : orig {std::cout.rdbuf (stream.rdbuf () ) }
+    { }
+    
+    ~RedirectStdOut () {
+        std::cout.rdbuf (orig);
+    }
+    
+private:
+    std::streambuf* orig;
+};
+    
 class WSClient : public std::enable_shared_from_this<WSClient>
 {
 public:
@@ -154,6 +173,14 @@ public:
         
         // The make_printable() function helps print a ConstBufferSequence
         std::cout << beast::make_printable(_buffer.data()) << "\n";
+        std::stringstream os {};
+        {
+            RedirectStdOut rdOut {os};
+            {
+                std::cout << beast::make_printable(_buffer.data());
+            }
+            REQUIRE (_text == os.str() );
+        }
     }
 
 private:
