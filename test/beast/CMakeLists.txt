@@ -10,12 +10,15 @@
 add_definitions (-DBOOST_BEAST_ALLOW_DEPRECATED)
 add_definitions (-DBOOST_BEAST_TESTS)
 
+#hacky
+link_directories(/usr/local/boost_1_69_0/lib)
+link_libraries(boost_coroutine boost_filesystem fmt)
 
 add_subdirectory (core)
 add_subdirectory (experimental)
 add_subdirectory (http)
 add_subdirectory (websocket)
-add_subdirectory (zlib)
+#add_subdirectory (zlib)
 
 #-------------------------------------------------------------------------------
 
@@ -35,4 +38,6 @@ add_executable (tests-beast
     zlib.cpp
 )
 
+target_link_directories(tests-beast PUBLIC /usr/local/boost_1_69_0/lib)
+target_link_libraries(tests-beast boost_coroutine)
 set_property(TARGET tests-beast PROPERTY FOLDER "tests")

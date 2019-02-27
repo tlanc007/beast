@@ -14,7 +14,7 @@ project (Beast VERSION 215)
 
 set_property (GLOBAL PROPERTY USE_FOLDERS ON)
 option (Beast_BUILD_EXAMPLES "Build examples" ON)
-option (Beast_BUILD_TESTS "Build tests" OFF)
+option (Beast_BUILD_TESTS "Build tests" ON)
 
 if (MSVC)
     set (CMAKE_VERBOSE_MAKEFILE FALSE)

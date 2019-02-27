@@ -21,6 +21,7 @@ if (OPENSSL_FOUND)
     link_libraries (${OPENSSL_LIBRARIES})
 endif()
 
+
 set (ZLIB_SOURCES
     ${CMAKE_CURRENT_LIST_DIR}/extern/zlib-1.2.11/crc32.h
     ${CMAKE_CURRENT_LIST_DIR}/extern/zlib-1.2.11/deflate.h
@@ -45,6 +46,6 @@ set (ZLIB_SOURCES
 )
 
 add_subdirectory (beast)
-add_subdirectory (bench)
-add_subdirectory (doc)
+#add_subdirectory (bench)
+#add_subdirectory (doc)
 add_subdirectory (example)

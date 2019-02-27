@@ -10,6 +10,7 @@
 #ifndef BOOST_BEAST_UNIT_TEST_SUITE_HPP
 #define BOOST_BEAST_UNIT_TEST_SUITE_HPP
 
+#include <fmt/printf.h>
 #include <boost/beast/_experimental/unit_test/runner.hpp>
 #include <boost/throw_exception.hpp>
 #include <ostream>
@@ -208,6 +209,16 @@ public:
     template<class = void>
     void
     pass();
+
+    template<class String>
+    void pass (String const& reason) {
+         fmt::printf("{}\n", reason);   
+    }
+
+    template<class = void>
+    void pass(std::string const& reason) {
+        fmt::printf("{}\n", reason);
+    }
 
     /** Record a failure.
 
@@ -631,7 +642,7 @@ run(runner& r)
     If the condition is false, the file and line number are reported.
 */
 #define BEAST_EXPECTS(cond, reason) ((cond) ? \
-    (::boost::beast::unit_test::suite::this_suite()->pass(), true) : \
+    ((::boost::beast::unit_test::suite::this_suite()->pass((reason)), true) ): \
     (::boost::beast::unit_test::suite::this_suite()->fail((reason), __FILE__, __LINE__), false))
 #endif
 
