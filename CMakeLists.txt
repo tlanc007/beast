@@ -74,9 +74,9 @@ include_directories (include)
 # Boost
 #
 
-#get_filename_component (BOOST_ROOT ../../ ABSOLUTE)
-#get_filename_component (BOOST_ROOT /Users/tal/Downloads/boost_1_69_0 ABSOLUTE)
-get_filename_component (BOOST_ROOT /usr/local/boost_1_69_0 ABSOLUTE)
+#get_filename_component (BOOST_ROOT ../../.. ABSOLUTE)
+get_filename_component (BOOST_ROOT /Users/tal/Documents/ciere/boostdev/boost ABSOLUTE)
+#get_filename_component (BOOST_ROOT /usr/local/boost_1_69_0 ABSOLUTE)
 
 # VFALCO I want static but "b2 stage" builds a minimal set which excludes static
 add_definitions (-DBOOST_ALL_STATIC_LINK=1)
@@ -88,9 +88,12 @@ add_definitions (-DBOOST_ASIO_DISABLE_BOOST_DATE_TIME=1)
 add_definitions (-DBOOST_ASIO_DISABLE_BOOST_REGEX=1)
 add_definitions (-DBOOST_COROUTINES_NO_DEPRECATION_WARNING=1)
 
-include_directories (${BOOST_ROOT}/include)
+include_directories (${BOOST_ROOT}/include ${BOOST_ROOT})
 
-link_directories(${BOOST_ROOT}/lib)
+link_directories(${BOOST_ROOT}/stage/lib)
+
+#hacky
+link_libraries(boost_coroutine boost_filesystem)
 
 if (MINGW)
     link_libraries(ws2_32 mswsock)
