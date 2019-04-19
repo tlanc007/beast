@@ -119,9 +119,19 @@ find_package(OpenSSL)
 #
 #-------------------------------------------------------------------------------
 
-#get_filename_component (BOOST_ROOT ../../.. ABSOLUTE)
-get_filename_component (BOOST_ROOT /Users/tal/Documents/ciere/boostdev/boost ABSOLUTE)
-#get_filename_component (BOOST_ROOT /usr/local/boost_1_69_0 ABSOLUTE)
+set (BOOST_ROOT "$ENV{BOOST_ROOT}" CACHE STRING "Override BOOST_ROOT path")
+message("BOOST_ROOT cache: ${BOOST_ROOT}")
+
+message ("------ BOOST_ROOT: ${BOOST_ROOT}")
+
+if ((${BOOST_ROOT} STREQUAL "") OR (NOT EXISTS ${BOOST_ROOT}) )
+    message (FATAL_ERROR "BOOST_ROOT (ENV or -DBOOST_ROOT) must be set to a valid directory")
+endif ()
+
+# NEED when dealing with BEAST DEV code base
+##get_filename_component (BEAST_ROOT ${BOOST_ROOT}/libs/beast ABSOLUTE)
+get_filename_component (BEAST_ROOT ${BOOST_ROOT} ABSOLUTE)
+
 
 # VFALCO I want static but "b2 stage" builds a minimal set which excludes static
 add_definitions (-DBOOST_ALL_STATIC_LINK=1)
